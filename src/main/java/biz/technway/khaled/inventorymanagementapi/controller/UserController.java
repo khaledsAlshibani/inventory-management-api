@@ -1,6 +1,8 @@
 package biz.technway.khaled.inventorymanagementapi.controller;
 
 import biz.technway.khaled.inventorymanagementapi.dto.LoginRequestDTO;
+import biz.technway.khaled.inventorymanagementapi.entity.Inventory;
+import biz.technway.khaled.inventorymanagementapi.entity.Product;
 import biz.technway.khaled.inventorymanagementapi.entity.User;
 import biz.technway.khaled.inventorymanagementapi.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,11 +33,8 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<String> loginUser(@RequestBody LoginRequestDTO loginRequest) {
         boolean isAuthenticated = userService.validateUserLogin(loginRequest.getEmail(), loginRequest.getPassword());
-        if (isAuthenticated) {
-            return new ResponseEntity<>("Login successful", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Invalid email or password", HttpStatus.UNAUTHORIZED);
-        }
+        return isAuthenticated ? new ResponseEntity<>("Login successful", HttpStatus.OK)
+                : new ResponseEntity<>("Invalid email or password", HttpStatus.UNAUTHORIZED);
     }
 
     @GetMapping
@@ -49,5 +48,33 @@ public class UserController {
         Optional<User> user = userService.getUserById(id);
         return user.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @GetMapping("/{userId}/inventories")
+    public ResponseEntity<List<Inventory>> getUserInventories(@PathVariable Long userId) {
+        List<Inventory> inventories = userService.getUserInventories(userId);
+        return new ResponseEntity<>(inventories, HttpStatus.OK);
+    }
+
+    @GetMapping("/{userId}/inventories/{inventoryId}/products")
+    public ResponseEntity<List<Product>> getUserProductsInInventory(
+            @PathVariable Long userId, @PathVariable Long inventoryId) {
+
+        List<Product> products = userService.getUserProductsInInventory(userId, inventoryId);
+        return new ResponseEntity<>(products, HttpStatus.OK);
+    }
+
+    // Update User (without password)
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+        User updatedUser = userService.updateUser(id, userDetails);
+        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+    }
+
+    // Update Password
+    @PutMapping("/{id}/password")
+    public ResponseEntity<Void> updatePassword(@PathVariable Long id, @RequestBody String newPassword) {
+        userService.updatePassword(id, newPassword);
+        return ResponseEntity.noContent().build();
     }
 }

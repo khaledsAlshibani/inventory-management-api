@@ -32,16 +32,13 @@ public class ProductService {
         return productRepository.findById(id);
     }
 
-
     public void updateProduct(Long id, Product product) {
         productRepository
                 .findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid user Id:" + id));
 
         product.setId(id);
-
         productRepository.save(product);
-
     }
 
     public void deleteProduct(Long id) {
