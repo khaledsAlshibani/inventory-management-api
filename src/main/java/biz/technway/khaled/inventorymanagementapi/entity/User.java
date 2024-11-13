@@ -2,6 +2,7 @@ package biz.technway.khaled.inventorymanagementapi.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 
 import java.util.Date;
 
@@ -13,22 +14,32 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Username is required")
+    @Size(max = 255, message = "Username must be at most 255 characters")
     @Column(nullable = false, unique = true, length = 255)
     private String username;
 
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email should be valid")
+    @Size(max = 255, message = "Email must be at most 255 characters")
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
-    @JsonIgnore
+    @NotBlank(message = "Password is required")
+    @Size(max = 255, message = "Password must be at most 255 characters")
     @Column(nullable = false, length = 255)
     private String password;
 
+    @Size(max = 255, message = "Name must be at most 255 characters")
     @Column(nullable = true, length = 255)
     private String name;
 
+    @Size(max = 255, message = "Photo path must be at most 255 characters")
     @Column(name = "photo_path", nullable = true, length = 255)
     private String photoPath;
 
+    @NotNull(message = "Birthdate is required")
+    @Past(message = "Birthdate must be a date in the past")
     @Column(nullable = false)
     @Temporal(TemporalType.DATE)
     private Date birthdate;
@@ -67,6 +78,7 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
+    // Getters and Setters
     public Long getId() {
         return id;
     }

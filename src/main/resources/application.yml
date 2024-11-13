@@ -18,7 +18,11 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MariaDBDialect
 
-#security:
-#  jwt:
-#    secret-key: "your-256-bit-secret-key-in-base64"
-#    expiration-time: 3600000  # 1 hour in milliseconds
+security:
+  jwt:
+    secret-key: "WXw75pu6zkeJz2fOIXuxX6ogL9kiakA5kM6hmrsFEpE="
+    expiration-time: 3600000  # 1 hour in milliseconds
+
+logging:
+  level:
+    root: INFO

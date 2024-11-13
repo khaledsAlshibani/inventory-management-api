@@ -8,7 +8,7 @@ import biz.technway.khaled.inventorymanagementapi.repository.ProductRepository;
 import biz.technway.khaled.inventorymanagementapi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -20,32 +20,50 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final InventoryRepository inventoryRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final ProductRepository productRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, InventoryRepository inventoryRepository, ProductRepository productRepository) {
+    public UserService(UserRepository userRepository, InventoryRepository inventoryRepository, ProductRepository productRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.inventoryRepository = inventoryRepository;
         this.productRepository = productRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public User createUser(User user) {
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already in use.");
+        }
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is already in use.");
+        }
+
         String hashedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashedPassword);
         return userRepository.save(user);
     }
 
+
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        List<User> users = userRepository.findAll();
+        if (users.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No users found.");
+        }
+        return users;
     }
 
     public List<Product> getUserProductsInInventory(Long userId, Long inventoryId) {
         // Ensure user exists
-        userRepository.findById(userId).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + userId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + userId));
 
-        // Fetch products by userId and inventoryId
+        // Ensure inventory belongs to user
+        if (!inventoryRepository.existsByIdAndUserId(inventoryId, userId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found for the user with ID: " + userId);
+        }
+
+        // Fetch products in inventory
         return productRepository.findByUserIdAndInventoryId(userId, inventoryId);
     }
 
@@ -54,17 +72,41 @@ public class UserService {
     }
 
     public boolean validateUserLogin(String email, String rawPassword) {
-        Optional<User> user = userRepository.findByEmail(email);
-        return user.isPresent() && passwordEncoder.matches(rawPassword, user.get().getPassword());
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with email: " + email));
+
+        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
+        }
+
+        return true;
     }
 
     public List<Inventory> getUserInventories(Long userId) {
-        return inventoryRepository.findByUserId(userId);
+        // Ensure user exists
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + userId));
+
+        List<Inventory> inventories = inventoryRepository.findByUserId(userId);
+        if (inventories.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No inventories found for user with ID: " + userId);
+        }
+        return inventories;
     }
 
     public User updateUser(Long id, User userDetails) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + id));
+
+        // Check for unique username and email if changed
+        if (!existingUser.getUsername().equals(userDetails.getUsername()) &&
+                userRepository.findByUsername(userDetails.getUsername()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is already in use.");
+        }
+        if (!existingUser.getEmail().equals(userDetails.getEmail()) &&
+                userRepository.findByEmail(userDetails.getEmail()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already in use.");
+        }
 
         existingUser.setUsername(userDetails.getUsername());
         existingUser.setEmail(userDetails.getEmail());

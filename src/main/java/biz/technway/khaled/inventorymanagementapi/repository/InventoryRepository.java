@@ -9,4 +9,12 @@ import java.util.List;
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     List<Inventory> findByUserId(Long userId);
+
+    List<Inventory> findByStatus(String status);
+
+    List<Inventory> findByUserIdAndStatus(Long userId, String status);
+
+    long countByUserId(Long userId);
+
+    boolean existsByIdAndUserId(Long id, Long userId);
 }
