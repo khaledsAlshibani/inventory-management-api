@@ -1,0 +1,11 @@
+### Get All Users
+GET http://localhost:8082/api/v1/users
+
+### Login User
+POST http://localhost:8082/api/v1/users/login
+Content-Type: application/json
+
+{
+  "email": "khaled@gmail.com",
+  "password": "khaled2023"
+}
