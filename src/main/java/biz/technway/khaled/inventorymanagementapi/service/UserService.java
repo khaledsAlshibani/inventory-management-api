@@ -1,5 +1,6 @@
 package biz.technway.khaled.inventorymanagementapi.service;
 
+import biz.technway.khaled.inventorymanagementapi.dto.UserResponseDTO;
 import biz.technway.khaled.inventorymanagementapi.entity.User;
 import biz.technway.khaled.inventorymanagementapi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -36,16 +38,16 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public List<User> getAllUsers() {
+    public List<UserResponseDTO> getAllUserDTOs() {
         List<User> users = userRepository.findAll();
         if (users.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No users found.");
         }
-        return users;
+        return users.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    public Optional<User> getUserById(Long id) {
-        return userRepository.findById(id);
+    public Optional<UserResponseDTO> getUserById(Long id) {
+        return userRepository.findById(id).map(this::convertToDTO);
     }
 
     public boolean validateUserLogin(String email, String rawPassword) {
@@ -94,5 +96,18 @@ public class UserService {
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with email: " + email));
+    }
+
+    public UserResponseDTO convertToDTO(User user) {
+        UserResponseDTO dto = new UserResponseDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setName(user.getName());
+        dto.setPhotoPath(user.getPhotoPath());
+        dto.setBirthdate(user.getBirthdate());
+        dto.setCreatedAt(user.getCreatedAt());
+        dto.setUpdatedAt(user.getUpdatedAt());
+        return dto;
     }
 }

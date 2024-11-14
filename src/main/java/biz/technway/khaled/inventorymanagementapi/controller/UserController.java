@@ -1,6 +1,7 @@
 package biz.technway.khaled.inventorymanagementapi.controller;
 
 import biz.technway.khaled.inventorymanagementapi.dto.LoginRequestDTO;
+import biz.technway.khaled.inventorymanagementapi.dto.UserResponseDTO;
 import biz.technway.khaled.inventorymanagementapi.entity.User;
 import biz.technway.khaled.inventorymanagementapi.service.UserService;
 import biz.technway.khaled.inventorymanagementapi.util.JwtUtil;
@@ -33,9 +34,10 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
+    public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody User user) {
         User createdUser = userService.createUser(user);
-        return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+        UserResponseDTO responseDTO = userService.convertToDTO(createdUser);
+        return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
@@ -45,13 +47,14 @@ public class UserController {
             if (isAuthenticated) {
                 String token = jwtUtil.generateToken(loginRequest.getEmail());
                 User user = userService.findByEmail(loginRequest.getEmail()); // Fetch the user details
+                UserResponseDTO userDTO = userService.convertToDTO(user);
 
                 Map<String, String> response = new HashMap<>();
                 response.put("message", "Login successful");
                 response.put("token", token);
-                response.put("id", String.valueOf(user.getId()));
-                response.put("name", user.getName());
-                response.put("email", user.getEmail());
+                response.put("id", String.valueOf(userDTO.getId()));
+                response.put("name", userDTO.getName());
+                response.put("email", userDTO.getEmail());
 
                 return ResponseEntity.ok()
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -69,22 +72,23 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.getAllUsers();
+    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+        List<UserResponseDTO> users = userService.getAllUserDTOs();
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        Optional<User> user = userService.getUserById(id);
-        return user.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
+        Optional<UserResponseDTO> userDTO = userService.getUserById(id);
+        return userDTO.map(dto -> new ResponseEntity<>(dto, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @Valid @RequestBody User userDetails) {
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable Long id, @Valid @RequestBody User userDetails) {
         User updatedUser = userService.updateUser(id, userDetails);
-        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+        UserResponseDTO responseDTO = userService.convertToDTO(updatedUser);
+        return new ResponseEntity<>(responseDTO, HttpStatus.OK);
     }
 
     @PutMapping("/{id}/password")

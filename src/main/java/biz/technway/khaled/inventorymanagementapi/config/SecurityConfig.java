@@ -2,6 +2,7 @@ package biz.technway.khaled.inventorymanagementapi.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -18,14 +19,16 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/users/login", "/api/v1/users").permitAll()
+                        .requestMatchers("/api/v1/users/login", "/api/v1/users").permitAll() // Allow registration/login
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users").authenticated() // Only authenticated users can access GET /api/v1/users
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .formLogin(form -> form.disable()); // Disable default Spring Security login form
+                .formLogin(form -> form.disable());
 
         return http.build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
