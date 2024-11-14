@@ -44,7 +44,6 @@ public class UserService {
         return userRepository.save(user);
     }
 
-
     public List<User> getAllUsers() {
         List<User> users = userRepository.findAll();
         if (users.isEmpty()) {

@@ -1,7 +1,6 @@
 package biz.technway.khaled.inventorymanagementapi.controller;
 
 import biz.technway.khaled.inventorymanagementapi.dto.LoginRequestDTO;
-import biz.technway.khaled.inventorymanagementapi.dto.UserRequestDTO;
 import biz.technway.khaled.inventorymanagementapi.entity.Inventory;
 import biz.technway.khaled.inventorymanagementapi.entity.Product;
 import biz.technway.khaled.inventorymanagementapi.entity.User;
@@ -36,15 +35,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@Valid @RequestBody UserRequestDTO userRequestDTO) {
-        User user = new User();
-        user.setUsername(userRequestDTO.getUsername());
-        user.setEmail(userRequestDTO.getEmail());
-        user.setPassword(userRequestDTO.getPassword());
-        user.setName(userRequestDTO.getName());
-        user.setPhotoPath(userRequestDTO.getPhotoPath());
-        user.setBirthdate(userRequestDTO.getBirthdate());
-
+    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
         User createdUser = userService.createUser(user);
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     }

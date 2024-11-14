@@ -16,31 +16,30 @@ public class User {
 
     @NotBlank(message = "Username is required")
     @Size(max = 255, message = "Username must be at most 255 characters")
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(name = "username", nullable = false, unique = true, length = 255)
     private String username;
 
     @NotBlank(message = "Email is required")
     @Email(message = "Email should be valid")
     @Size(max = 255, message = "Email must be at most 255 characters")
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
     @NotBlank(message = "Password is required")
     @Size(max = 255, message = "Password must be at most 255 characters")
-    @Column(nullable = false, length = 255)
+    @Column(name = "password", nullable = false, length = 255)
     private String password;
 
-    @Size(max = 255, message = "Name must be at most 255 characters")
-    @Column(nullable = true, length = 255)
+    @Size(min = 3, max = 255, message = "Name must be between 8 and 255 characters")
+    @Column(name = "name", nullable = true, length = 255)
     private String name;
 
     @Size(max = 255, message = "Photo path must be at most 255 characters")
     @Column(name = "photo_path", nullable = true, length = 255)
     private String photoPath;
 
-    @NotNull(message = "Birthdate is required")
     @Past(message = "Birthdate must be a date in the past")
-    @Column(nullable = false)
+    @Column(name = "birthdate", nullable = true)
     @Temporal(TemporalType.DATE)
     private Date birthdate;
 
