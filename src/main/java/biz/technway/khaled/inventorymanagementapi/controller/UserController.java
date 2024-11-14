@@ -21,7 +21,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/users")
-@Validated // Optional, to enforce validation in the controller level
+@Validated
 public class UserController {
 
     private final UserService userService;
