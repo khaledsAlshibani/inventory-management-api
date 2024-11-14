@@ -2,21 +2,23 @@ package biz.technway.khaled.inventorymanagementapi.config;
 
 import biz.technway.khaled.inventorymanagementapi.service.CustomUserDetailsService;
 import biz.technway.khaled.inventorymanagementapi.util.JwtUtil;
-import io.jsonwebtoken.JwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import io.jsonwebtoken.JwtException;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -35,31 +37,29 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-
             try {
                 String email = jwtUtil.extractEmail(token);
-                if (email != null && jwtUtil.validateToken(token, email)
-                        && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
-
-                    // Create authentication token
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
-
-                    // Set authentication details
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                    // Set the authentication in the security context
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    if (jwtUtil.validateToken(token, userDetails.getUsername())) {
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
                 }
             } catch (JwtException e) {
-                // If there's an issue with the JWT token (e.g., expired, malformed), respond with 401
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return; // Exit the filter chain, so the request doesn't proceed
+                // Set custom error response for invalid token
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+                // Customize your message
+                PrintWriter writer = response.getWriter();
+                writer.write("{\"error\": \"Invalid or expired token. Please log in again.\"}");
+                writer.flush();
+                return; // Stop further filter chain processing
             }
         }
 
         filterChain.doFilter(request, response);
     }
-
 }
