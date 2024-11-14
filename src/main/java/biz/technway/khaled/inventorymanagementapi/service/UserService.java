@@ -124,4 +124,9 @@ public class UserService {
         existingUser.setPassword(hashedPassword);
         userRepository.save(existingUser);
     }
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with email: " + email));
+    }
 }

@@ -21,7 +21,6 @@ public class UserRegisterDTO {
     @Size(min = 8, max = 255, message = "Password must be at most 255 characters")
     private String password;
 
-    // Getters and Setters
     public String getName() {
         return name;
     }

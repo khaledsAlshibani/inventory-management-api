@@ -40,16 +40,20 @@ public class UserController {
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     }
 
-    @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> loginUser(@Valid @RequestBody LoginRequestDTO loginRequest) {
         try {
             boolean isAuthenticated = userService.validateUserLogin(loginRequest.getEmail(), loginRequest.getPassword());
             if (isAuthenticated) {
                 String token = jwtUtil.generateToken(loginRequest.getEmail());
+                User user = userService.findByEmail(loginRequest.getEmail()); // Fetch the user details
+
                 Map<String, String> response = new HashMap<>();
                 response.put("message", "Login successful");
                 response.put("token", token);
+                response.put("id", String.valueOf(user.getId()));
+                response.put("name", user.getName());
+                response.put("email", user.getEmail());
 
                 return ResponseEntity.ok()
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -65,7 +69,6 @@ public class UserController {
         response.put("message", "Invalid email or password");
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
-
 
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
