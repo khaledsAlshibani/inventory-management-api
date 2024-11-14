@@ -1,8 +1,6 @@
 package biz.technway.khaled.inventorymanagementapi.controller;
 
 import biz.technway.khaled.inventorymanagementapi.dto.LoginRequestDTO;
-import biz.technway.khaled.inventorymanagementapi.entity.Inventory;
-import biz.technway.khaled.inventorymanagementapi.entity.Product;
 import biz.technway.khaled.inventorymanagementapi.entity.User;
 import biz.technway.khaled.inventorymanagementapi.service.UserService;
 import biz.technway.khaled.inventorymanagementapi.util.JwtUtil;
@@ -81,20 +79,6 @@ public class UserController {
         Optional<User> user = userService.getUserById(id);
         return user.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
-    @GetMapping("/{userId}/inventories")
-    public ResponseEntity<List<Inventory>> getUserInventories(@PathVariable Long userId) {
-        List<Inventory> inventories = userService.getUserInventories(userId);
-        return new ResponseEntity<>(inventories, HttpStatus.OK);
-    }
-
-    @GetMapping("/{userId}/inventories/{inventoryId}/products")
-    public ResponseEntity<List<Product>> getUserProductsInInventory(
-            @PathVariable Long userId, @PathVariable Long inventoryId) {
-
-        List<Product> products = userService.getUserProductsInInventory(userId, inventoryId);
-        return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")

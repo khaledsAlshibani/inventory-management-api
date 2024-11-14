@@ -1,10 +1,6 @@
 package biz.technway.khaled.inventorymanagementapi.service;
 
-import biz.technway.khaled.inventorymanagementapi.entity.Inventory;
-import biz.technway.khaled.inventorymanagementapi.entity.Product;
 import biz.technway.khaled.inventorymanagementapi.entity.User;
-import biz.technway.khaled.inventorymanagementapi.repository.InventoryRepository;
-import biz.technway.khaled.inventorymanagementapi.repository.ProductRepository;
 import biz.technway.khaled.inventorymanagementapi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,15 +15,11 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final InventoryRepository inventoryRepository;
-    private final ProductRepository productRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, InventoryRepository inventoryRepository, ProductRepository productRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.inventoryRepository = inventoryRepository;
-        this.productRepository = productRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -52,20 +44,6 @@ public class UserService {
         return users;
     }
 
-    public List<Product> getUserProductsInInventory(Long userId, Long inventoryId) {
-        // Ensure user exists
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + userId));
-
-        // Ensure inventory belongs to user
-        if (!inventoryRepository.existsByIdAndUserId(inventoryId, userId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found for the user with ID: " + userId);
-        }
-
-        // Fetch products in inventory
-        return productRepository.findByUserIdAndInventoryId(userId, inventoryId);
-    }
-
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
@@ -79,18 +57,6 @@ public class UserService {
         }
 
         return true;
-    }
-
-    public List<Inventory> getUserInventories(Long userId) {
-        // Ensure user exists
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + userId));
-
-        List<Inventory> inventories = inventoryRepository.findByUserId(userId);
-        if (inventories.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No inventories found for user with ID: " + userId);
-        }
-        return inventories;
     }
 
     public User updateUser(Long id, User userDetails) {
