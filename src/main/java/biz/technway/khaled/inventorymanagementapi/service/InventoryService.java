@@ -48,7 +48,6 @@ public class InventoryService {
         existingInventory.setAddress(inventoryDetails.getAddress());
         existingInventory.setArea(inventoryDetails.getArea());
         existingInventory.setAvailableArea(inventoryDetails.getAvailableArea());
-        existingInventory.setExpiryDate(inventoryDetails.getExpiryDate());
 
         return inventoryRepository.save(existingInventory);
     }
@@ -71,7 +70,6 @@ public class InventoryService {
         dto.setAvailableArea(inventory.getAvailableArea());
         dto.setCreatedAt(inventory.getCreatedAt());
         dto.setUpdatedAt(inventory.getUpdatedAt());
-        dto.setExpiryDate(inventory.getExpiryDate());
         return dto;
     }
 }

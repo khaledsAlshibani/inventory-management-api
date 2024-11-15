@@ -34,12 +34,12 @@ public class Inventory {
     @NotNull(message = "Status is required")
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private Status status;
+    private Status status = Status.ACTIVE;
 
     @NotNull(message = "Inventory type is required")
     @Enumerated(EnumType.STRING)
     @Column(name = "inventory_type", nullable = false)
-    private InventoryType inventoryType;
+    private InventoryType inventoryType = InventoryType.WAREHOUSE;
 
     @Size(max = 255, message = "Address must be at most 255 characters")
     @Column(name = "address", length = 255)
@@ -56,25 +56,19 @@ public class Inventory {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt = new Date();
+    private Date createdAt;
 
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
 
-    @Column(name = "expiry_date")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date expiryDate;
-
     @OneToMany(mappedBy = "inventory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Product> products;
 
-    // Enum for Status
     public enum Status {
         ACTIVE, INACTIVE
     }
 
-    // Enum for Inventory Type
     public enum InventoryType {
         WAREHOUSE, STORE, ONLINE
     }
@@ -89,8 +83,6 @@ public class Inventory {
         updatedAt = new Date();
     }
 
-    // Getters and Setters
-
     public Long getId() {
         return id;
     }
@@ -99,67 +91,67 @@ public class Inventory {
         this.id = id;
     }
 
-    public String getName() {
+    public @NotBlank(message = "Name is required") @Size(max = 100, message = "Name must be at most 100 characters") String getName() {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(@NotBlank(message = "Name is required") @Size(max = 100, message = "Name must be at most 100 characters") String name) {
         this.name = name;
     }
 
-    public String getDescription() {
+    public @Size(max = 65535, message = "Description is too long") String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(@Size(max = 65535, message = "Description is too long") String description) {
         this.description = description;
     }
 
-    public Long getUserId() {
+    public @NotNull(message = "User ID is required") Long getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(@NotNull(message = "User ID is required") Long userId) {
         this.userId = userId;
     }
 
-    public Status getStatus() {
+    public @NotNull(message = "Status is required") Status getStatus() {
         return status;
     }
 
-    public void setStatus(Status status) {
+    public void setStatus(@NotNull(message = "Status is required") Status status) {
         this.status = status;
     }
 
-    public InventoryType getInventoryType() {
+    public @NotNull(message = "Inventory type is required") InventoryType getInventoryType() {
         return inventoryType;
     }
 
-    public void setInventoryType(InventoryType inventoryType) {
+    public void setInventoryType(@NotNull(message = "Inventory type is required") InventoryType inventoryType) {
         this.inventoryType = inventoryType;
     }
 
-    public String getAddress() {
+    public @Size(max = 255, message = "Address must be at most 255 characters") String getAddress() {
         return address;
     }
 
-    public void setAddress(String address) {
+    public void setAddress(@Size(max = 255, message = "Address must be at most 255 characters") String address) {
         this.address = address;
     }
 
-    public BigDecimal getArea() {
+    public @NotNull(message = "Area is required") @DecimalMin(value = "0.0", inclusive = false, message = "Area must be greater than 0") BigDecimal getArea() {
         return area;
     }
 
-    public void setArea(BigDecimal area) {
+    public void setArea(@NotNull(message = "Area is required") @DecimalMin(value = "0.0", inclusive = false, message = "Area must be greater than 0") BigDecimal area) {
         this.area = area;
     }
 
-    public BigDecimal getAvailableArea() {
+    public @DecimalMin(value = "0.0", inclusive = false, message = "Available area must be greater than 0") BigDecimal getAvailableArea() {
         return availableArea;
     }
 
-    public void setAvailableArea(BigDecimal availableArea) {
+    public void setAvailableArea(@DecimalMin(value = "0.0", inclusive = false, message = "Available area must be greater than 0") BigDecimal availableArea) {
         this.availableArea = availableArea;
     }
 
@@ -177,14 +169,6 @@ public class Inventory {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public Date getExpiryDate() {
-        return expiryDate;
-    }
-
-    public void setExpiryDate(Date expiryDate) {
-        this.expiryDate = expiryDate;
     }
 
     public List<Product> getProducts() {

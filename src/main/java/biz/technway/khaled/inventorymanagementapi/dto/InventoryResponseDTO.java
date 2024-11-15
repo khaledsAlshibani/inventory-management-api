@@ -14,8 +14,19 @@ public class InventoryResponseDTO {
     private BigDecimal availableArea;
     private Date createdAt;
     private Date updatedAt;
-    private Date expiryDate;
 
+    // Add a new field for error messages if needed
+    private String message;
+
+    // Default constructor
+    public InventoryResponseDTO() {}
+
+    // Constructor with a message parameter
+    public InventoryResponseDTO(String message) {
+        this.message = message;
+    }
+
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -96,11 +107,11 @@ public class InventoryResponseDTO {
         this.updatedAt = updatedAt;
     }
 
-    public Date getExpiryDate() {
-        return expiryDate;
+    public String getMessage() {
+        return message;
     }
 
-    public void setExpiryDate(Date expiryDate) {
-        this.expiryDate = expiryDate;
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

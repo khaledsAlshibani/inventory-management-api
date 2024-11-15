@@ -11,11 +11,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -36,20 +31,6 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable());
 
         return http.build();
-    }
-
-    @Bean
-    public CorsFilter corsFilter() {
-        CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.setAllowedOrigins(List.of("http://localhost:3000")); // Allow only this origin
-        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Allowed methods
-        corsConfiguration.setAllowedHeaders(List.of("Authorization", "Content-Type")); // Allowed headers
-        corsConfiguration.setAllowCredentials(true); // Allow credentials if needed
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", corsConfiguration);
-
-        return new CorsFilter(source);
     }
 
     @Bean
