@@ -40,17 +40,13 @@ public class InventoryController {
         logger.info("Accessing POST /api/v1/inventories - Creating new inventory");
 
         try {
-            // Extract the JWT token value from the "Authorization" header
             String token = authToken.startsWith("Bearer ") ? authToken.substring(7) : authToken;
 
-            // Use JwtUtil to extract the userId from the token
             Long userId = jwtUtil.getUserIdFromToken(token);
 
             if (userId != null) {
-                // Set the userId in the inventory object
                 inventory.setUserId(userId);
 
-                // Save the inventory using the service layer
                 Inventory createdInventory = inventoryService.createInventory(inventory);
                 InventoryResponseDTO responseDTO = inventoryService.convertToDTO(createdInventory);
 
@@ -99,15 +95,30 @@ public class InventoryController {
             return new ResponseEntity<>(new InventoryResponseDTO("Failed to retrieve inventory"), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
     @PutMapping("/{id}")
-    public ResponseEntity<InventoryResponseDTO> updateInventory(@PathVariable Long id, @Valid @RequestBody Inventory inventoryDetails) {
+    public ResponseEntity<InventoryResponseDTO> updateInventory(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String authToken,
+            @Valid @RequestBody Inventory inventoryDetails) {
+
         logger.info("Accessing PUT /api/v1/inventories/{} - Updating inventory", id);
+
         try {
-            Inventory updatedInventory = inventoryService.updateInventory(id, inventoryDetails);
-            InventoryResponseDTO responseDTO = inventoryService.convertToDTO(updatedInventory);
-            logger.info("Inventory updated successfully with ID: {}", id);
-            return new ResponseEntity<>(responseDTO, HttpStatus.OK);
+            String token = authToken.startsWith("Bearer ") ? authToken.substring(7) : authToken;
+
+            Long userId = jwtUtil.getUserIdFromToken(token);
+
+            if (userId != null) {
+                inventoryDetails.setUserId(userId);
+
+                Inventory updatedInventory = inventoryService.updateInventory(id, inventoryDetails);
+                InventoryResponseDTO responseDTO = inventoryService.convertToDTO(updatedInventory);
+
+                logger.info("Inventory updated successfully with ID: {}", id);
+                return new ResponseEntity<>(responseDTO, HttpStatus.OK);
+            } else {
+                throw new IllegalArgumentException("User ID not found in token");
+            }
         } catch (ResponseStatusException e) {
             logger.warn("Inventory not found with ID: {}", id);
             return new ResponseEntity<>(new InventoryResponseDTO("Inventory not found with ID: " + id), HttpStatus.NOT_FOUND);
