@@ -49,7 +49,9 @@ public class Inventory {
     @Column(name = "area", precision = 10, scale = 2, nullable = false)
     private BigDecimal area;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "Available area must be greater than 0")
+    /**
+     * If not set, defaults to the value of `area` during creation.
+     */
     @Column(name = "available_area", precision = 10, scale = 2)
     private BigDecimal availableArea;
 
@@ -75,6 +77,12 @@ public class Inventory {
     @PrePersist
     protected void onCreate() {
         createdAt = new Date();
+        if (description == null) {
+            description = "";
+        }
+        if (availableArea == null && area != null) {
+            availableArea = area;
+        }
     }
 
     @PreUpdate
