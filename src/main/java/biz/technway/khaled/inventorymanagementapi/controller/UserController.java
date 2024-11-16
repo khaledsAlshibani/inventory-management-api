@@ -45,9 +45,9 @@ public class UserController {
         try {
             boolean isAuthenticated = userService.validateUserLogin(loginRequest.getEmail(), loginRequest.getPassword());
             if (isAuthenticated) {
-                String token = jwtUtil.generateToken(loginRequest.getEmail());
-                User user = userService.findByEmail(loginRequest.getEmail()); // Fetch the user details
+                User user = userService.findByEmail(loginRequest.getEmail());
                 UserResponseDTO userDTO = userService.convertToDTO(user);
+                String token = jwtUtil.generateToken(loginRequest.getEmail(), userDTO.getId());
 
                 Map<String, String> response = new HashMap<>();
                 response.put("message", "Login successful");

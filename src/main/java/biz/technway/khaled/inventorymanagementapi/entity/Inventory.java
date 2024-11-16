@@ -27,8 +27,7 @@ public class Inventory {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @NotNull(message = "User ID is required")
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id", nullable = true)
     private Long userId;
 
     @NotNull(message = "Status is required")
@@ -107,7 +106,7 @@ public class Inventory {
         this.description = description;
     }
 
-    public @NotNull(message = "User ID is required") Long getUserId() {
+    public Long getUserId() {
         return userId;
     }
 

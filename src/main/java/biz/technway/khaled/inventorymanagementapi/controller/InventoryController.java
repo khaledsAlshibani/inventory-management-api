@@ -3,6 +3,7 @@ package biz.technway.khaled.inventorymanagementapi.controller;
 import biz.technway.khaled.inventorymanagementapi.dto.InventoryResponseDTO;
 import biz.technway.khaled.inventorymanagementapi.entity.Inventory;
 import biz.technway.khaled.inventorymanagementapi.service.InventoryService;
+import biz.technway.khaled.inventorymanagementapi.util.JwtUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,20 +24,41 @@ public class InventoryController {
 
     private final InventoryService inventoryService;
     private static final Logger logger = LoggerFactory.getLogger(InventoryController.class);
+    private final JwtUtil jwtUtil;
 
     @Autowired
-    public InventoryController(InventoryService inventoryService) {
+    public InventoryController(InventoryService inventoryService, JwtUtil jwtUtil) {
         this.inventoryService = inventoryService;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping
-    public ResponseEntity<InventoryResponseDTO> createInventory(@Valid @RequestBody Inventory inventory) {
+    public ResponseEntity<InventoryResponseDTO> createInventory(
+            @RequestHeader("Authorization") String authToken,
+            @Valid @RequestBody Inventory inventory) {
+
         logger.info("Accessing POST /api/v1/inventories - Creating new inventory");
+
         try {
-            Inventory createdInventory = inventoryService.createInventory(inventory);
-            InventoryResponseDTO responseDTO = inventoryService.convertToDTO(createdInventory);
-            logger.info("Inventory created successfully with ID: {}", responseDTO.getId());
-            return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
+            // Extract the JWT token value from the "Authorization" header
+            String token = authToken.startsWith("Bearer ") ? authToken.substring(7) : authToken;
+
+            // Use JwtUtil to extract the userId from the token
+            Long userId = jwtUtil.getUserIdFromToken(token);
+
+            if (userId != null) {
+                // Set the userId in the inventory object
+                inventory.setUserId(userId);
+
+                // Save the inventory using the service layer
+                Inventory createdInventory = inventoryService.createInventory(inventory);
+                InventoryResponseDTO responseDTO = inventoryService.convertToDTO(createdInventory);
+
+                logger.info("Inventory created successfully with ID: {}", responseDTO.getId());
+                return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
+            } else {
+                throw new IllegalArgumentException("User ID not found in token");
+            }
         } catch (Exception e) {
             logger.error("Error creating inventory: {}", e.getMessage());
             return new ResponseEntity<>(new InventoryResponseDTO("Failed to create inventory"), HttpStatus.INTERNAL_SERVER_ERROR);

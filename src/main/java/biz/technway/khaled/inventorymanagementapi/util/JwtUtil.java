@@ -17,9 +17,10 @@ public class JwtUtil {
     @Value("${security.jwt.expiration-time}")
     private long expirationTime;
 
-    public String generateToken(String email) {
+    public String generateToken(String email, Long userId) {
         return Jwts.builder()
                 .setSubject(email)
+                .claim("userId", userId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(SignatureAlgorithm.HS256, secretKey)
@@ -43,5 +44,21 @@ public class JwtUtil {
                 .setSigningKey(secretKey)
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    public Long getUserIdFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        Object userIdClaim = claims.get("userId");
+        if (userIdClaim == null) {
+            System.out.println("UserId not found in token claims.");
+            throw new IllegalArgumentException("Token does not contain userId./n Token is: " + token + "/n. All Claims are: " + claims);
+        }
+        System.out.println("All token claims: " + claims);
+        return Long.parseLong(userIdClaim.toString());
     }
 }
