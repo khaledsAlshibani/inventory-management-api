@@ -32,6 +32,13 @@ public class InventoryService {
                 .collect(Collectors.toList());
     }
 
+    public List<InventoryResponseDTO> getInventoriesByUserId(Long userId) {
+        List<Inventory> inventories = inventoryRepository.findByUserId(userId);
+        return inventories.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     public Optional<InventoryResponseDTO> getInventoryById(Long id) {
         return inventoryRepository.findById(id).map(this::convertToDTO);
     }

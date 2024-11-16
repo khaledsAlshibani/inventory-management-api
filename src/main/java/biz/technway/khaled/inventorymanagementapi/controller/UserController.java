@@ -1,11 +1,15 @@
 package biz.technway.khaled.inventorymanagementapi.controller;
 
+import biz.technway.khaled.inventorymanagementapi.dto.InventoryResponseDTO;
 import biz.technway.khaled.inventorymanagementapi.dto.LoginRequestDTO;
 import biz.technway.khaled.inventorymanagementapi.dto.UserResponseDTO;
 import biz.technway.khaled.inventorymanagementapi.entity.User;
+import biz.technway.khaled.inventorymanagementapi.service.InventoryService;
 import biz.technway.khaled.inventorymanagementapi.service.UserService;
 import biz.technway.khaled.inventorymanagementapi.util.JwtUtil;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -26,10 +30,13 @@ public class UserController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
+    private final InventoryService inventoryService;
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
-    public UserController(UserService userService, JwtUtil jwtUtil) {
+    public UserController(UserService userService, InventoryService inventoryService, JwtUtil jwtUtil) {
         this.userService = userService;
+        this.inventoryService = inventoryService;
         this.jwtUtil = jwtUtil;
     }
 
@@ -95,5 +102,32 @@ public class UserController {
     public ResponseEntity<Void> updatePassword(@PathVariable Long id, @RequestBody String newPassword) {
         userService.updatePassword(id, newPassword);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/inventories")
+    public ResponseEntity<List<InventoryResponseDTO>> getUserInventories(@RequestHeader("Authorization") String authToken) {
+        logger.info("Accessing GET /api/v1/users/inventories - Retrieving inventories for the logged-in user");
+        try {
+            // Extract the token and user ID
+            String token = authToken.startsWith("Bearer ") ? authToken.substring(7) : authToken;
+            Long userId = jwtUtil.getUserIdFromToken(token);
+
+            if (userId == null) {
+                throw new IllegalArgumentException("Invalid token: User ID not found");
+            }
+
+            // Fetch inventories for the user
+            List<InventoryResponseDTO> inventories = inventoryService.getInventoriesByUserId(userId);
+            if (inventories.isEmpty()) {
+                logger.warn("No inventories found for user ID: {}", userId);
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            logger.info("Retrieved {} inventories for user ID: {}", inventories.size(), userId);
+            return new ResponseEntity<>(inventories, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error retrieving inventories: {}", e.getMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

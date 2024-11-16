@@ -1,7 +1,10 @@
 package biz.technway.khaled.inventorymanagementapi.dto;
 
+import biz.technway.khaled.inventorymanagementapi.entity.Inventory;
+
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 public class InventoryResponseDTO {
     private Long id;
