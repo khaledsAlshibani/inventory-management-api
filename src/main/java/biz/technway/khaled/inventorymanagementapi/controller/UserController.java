@@ -7,6 +7,8 @@ import biz.technway.khaled.inventorymanagementapi.entity.User;
 import biz.technway.khaled.inventorymanagementapi.service.InventoryService;
 import biz.technway.khaled.inventorymanagementapi.service.UserService;
 import biz.technway.khaled.inventorymanagementapi.util.JwtUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
@@ -93,13 +96,34 @@ public class UserController {
     @PutMapping("/profile")
     public ResponseEntity<UserResponseDTO> updateProfile(
             @RequestHeader("Authorization") String authToken,
-            @RequestBody User userDetails) {
+            @RequestPart("user") String userJson,
+            @RequestPart(value = "photo", required = false) MultipartFile photo
+    ) {
+        // Extract userId from the auth token
         String token = authToken.startsWith("Bearer ") ? authToken.substring(7) : authToken;
         Long userId = jwtUtil.getUserIdFromToken(token);
 
-        User updatedUser = userService.updateUserWithPhoto(userId, userDetails);
-        UserResponseDTO responseDTO = userService.convertToDTO(updatedUser);
+        // Parse the user JSON into a User object
+        ObjectMapper objectMapper = new ObjectMapper();
+        User userDetails;
+        try {
+            userDetails = objectMapper.readValue(userJson, User.class);
+        } catch (JsonProcessingException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid user data format.");
+        }
 
+        // Handle the photo upload if provided
+        if (photo != null && !photo.isEmpty()) {
+            userService.validatePhoto(photo); // Validate the photo
+            String newPhotoPath = userService.savePhoto(photo); // Save the photo
+            userDetails.setPhotoPath(newPhotoPath); // Update the photo path in user details
+        }
+
+        // Update the user profile in the database
+        User updatedUser = userService.updateUserWithPhoto(userId, userDetails);
+
+        // Convert the updated user entity to DTO and return the response
+        UserResponseDTO responseDTO = userService.convertToDTO(updatedUser);
         return new ResponseEntity<>(responseDTO, HttpStatus.OK);
     }
 

@@ -7,7 +7,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.apache.tika.Tika;
+import org.apache.commons.io.FilenameUtils;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.io.IOException;
+import java.util.UUID;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +45,7 @@ public class UserService {
 
         // Set a default photo path if not provided
         if (user.getPhotoPath() == null || user.getPhotoPath().isEmpty()) {
-            user.setPhotoPath("http://localhost:8082/images/user-photos/default-user.png");
+            user.setPhotoPath("http://localhost:8082/images/user-photos/default-user.webp");
         }
 
         // Hash the password
@@ -50,12 +59,7 @@ public class UserService {
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + userId));
 
-        // Validate if the photo path is valid
-        if (userDetails.getPhotoPath() != null && !userDetails.getPhotoPath().isEmpty()) {
-            existingUser.setPhotoPath(userDetails.getPhotoPath());
-        }
-
-        // Update other user details
+        // Update user details
         if (userDetails.getName() != null) {
             existingUser.setName(userDetails.getName());
         }
@@ -65,8 +69,48 @@ public class UserService {
             }
             existingUser.setEmail(userDetails.getEmail());
         }
+        if (userDetails.getPhotoPath() != null) {
+            existingUser.setPhotoPath(userDetails.getPhotoPath());
+        }
 
         return userRepository.save(existingUser);
+    }
+
+    public void validatePhoto(MultipartFile photo) {
+        if (photo.getSize() > 500 * 1024) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File size exceeds 500 KB.");
+        }
+
+        Tika tika = new Tika();
+        String mimeType;
+        try {
+            mimeType = tika.detect(photo.getInputStream());
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to detect file type.");
+        }
+
+        // Allow only specific image types
+        if (!mimeType.matches("image/(jpeg|png|jpg|webp)")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file type. Only JPG, PNG, and WEBP are allowed.");
+        }
+    }
+
+    public String savePhoto(MultipartFile photo) {
+        try {
+            // Generate a unique file name
+            String extension = FilenameUtils.getExtension(photo.getOriginalFilename());
+            String uniqueFileName = System.currentTimeMillis() + "-" + UUID.randomUUID() + "." + extension;
+
+            // Define the target path
+            Path targetPath = Paths.get("src/main/resources/static/images/user-photos/" + uniqueFileName);
+
+            // Save the file
+            Files.copy(photo.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+            return "/images/user-photos/" + uniqueFileName;
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save photo.");
+        }
     }
 
     public List<UserResponseDTO> getAllUserDTOs() {
