@@ -21,10 +21,10 @@ spring:
 security:
   jwt:
     secret-key: "WXw75pu6zkeJz2fOIXuxX6ogL9kiakA5kM6hmrsFEpE="
-    expiration-time: 10,800,000  # 3 hours in milliseconds
+    expiration-time: 10800000  # 3 hours in milliseconds
 
 logging:
   level:
     root: INFO
-    org.springframework.web: DEBUG
-    biz.technway.khaled.inventorymanagementapi: TRACE
+#    org.springframework.web: DEBUG
+#    biz.technway.khaled.inventorymanagementapi: TRACE
