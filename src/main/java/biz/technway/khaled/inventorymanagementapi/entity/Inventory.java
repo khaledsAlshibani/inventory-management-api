@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -63,8 +64,8 @@ public class Inventory {
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
 
-    @OneToMany(mappedBy = "inventory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Product> products;
+    @OneToMany(mappedBy = "inventory", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Product> products = new ArrayList<>();
 
     public enum Status {
         ACTIVE, INACTIVE
@@ -118,7 +119,7 @@ public class Inventory {
         return userId;
     }
 
-    public void setUserId(@NotNull(message = "User ID is required") Long userId) {
+    public void setUserId(Long userId) {
         this.userId = userId;
     }
 
@@ -154,11 +155,11 @@ public class Inventory {
         this.area = area;
     }
 
-    public @DecimalMin(value = "0.0", inclusive = false, message = "Available area must be greater than 0") BigDecimal getAvailableArea() {
+    public BigDecimal getAvailableArea() {
         return availableArea;
     }
 
-    public void setAvailableArea(@DecimalMin(value = "0.0", inclusive = false, message = "Available area must be greater than 0") BigDecimal availableArea) {
+    public void setAvailableArea(BigDecimal availableArea) {
         this.availableArea = availableArea;
     }
 

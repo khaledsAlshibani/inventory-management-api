@@ -2,7 +2,9 @@ package biz.technway.khaled.inventorymanagementapi.service;
 
 import biz.technway.khaled.inventorymanagementapi.dto.InventoryResponseDTO;
 import biz.technway.khaled.inventorymanagementapi.entity.Inventory;
+import biz.technway.khaled.inventorymanagementapi.entity.Product;
 import biz.technway.khaled.inventorymanagementapi.repository.InventoryRepository;
+import biz.technway.khaled.inventorymanagementapi.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -10,19 +12,19 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
+    private final ProductRepository productRepository;
 
     @Autowired
-    public InventoryService(InventoryRepository inventoryRepository) {
+    public InventoryService(InventoryRepository inventoryRepository, ProductRepository productRepository) {
         this.inventoryRepository = inventoryRepository;
+        this.productRepository = productRepository;
     }
 
     public Inventory createInventory(Inventory inventory) {
@@ -84,44 +86,83 @@ public class InventoryService {
     }
 
     public Map<String, Object> getStatistics() {
-        List<Inventory> inventories = inventoryRepository.findAll();
+        List<Product> products = productRepository.findAll();
 
-        long totalInventories = inventories.size();
-        BigDecimal totalArea = inventories.stream()
-                .map(Inventory::getArea)
+        long totalProducts = products.size();
+        BigDecimal totalPriceValue = products.stream()
+                .map(product -> product.getPrice().multiply(BigDecimal.valueOf(product.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalAvailableArea = inventories.stream()
-                .map(Inventory::getAvailableArea)
+        BigDecimal totalAreaUsed = products.stream()
+                .map(Product::getArea)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Map<String, Long> statusCounts = inventories.stream()
+        Map<String, Long> statusCounts = products.stream()
                 .collect(Collectors.groupingBy(
-                        inventory -> inventory.getStatus().name(),
+                        product -> product.getStatus().name(),
                         Collectors.counting()
                 ));
 
-        Map<String, Long> typeCounts = inventories.stream()
+        Map<String, Long> inventoryCounts = products.stream()
+                .filter(product -> product.getInventory() != null)
                 .collect(Collectors.groupingBy(
-                        inventory -> inventory.getInventoryType().name(),
+                        product -> product.getInventory().getName(),
                         Collectors.counting()
                 ));
 
-        BigDecimal averageUtilization = inventories.stream()
-                .map(inventory -> {
-                    BigDecimal utilization = inventory.getAvailableArea()
-                            .divide(inventory.getArea(), 2, RoundingMode.HALF_UP);
-                    return BigDecimal.ONE.subtract(utilization);
-                })
+        BigDecimal averagePrice = totalProducts > 0
+                ? products.stream()
+                .map(Product::getPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .divide(new BigDecimal(totalInventories), 2, RoundingMode.HALF_UP);
+                .divide(BigDecimal.valueOf(totalProducts), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
 
-        return Map.of(
-                "totalInventories", totalInventories,
-                "totalArea", totalArea,
-                "totalAvailableArea", totalAvailableArea,
-                "statusCounts", statusCounts,
-                "typeCounts", typeCounts,
-                "averageUtilization", averageUtilization
+        BigDecimal averageAreaUsed = totalProducts > 0
+                ? totalAreaUsed.divide(BigDecimal.valueOf(totalProducts), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        long totalExpiredProducts = products.stream()
+                .filter(product -> product.getExpirationDate() != null &&
+                        product.getExpirationDate().before(new Date()))
+                .count();
+
+        long totalProductsWithoutInventories = products.stream()
+                .filter(product -> product.getInventory() == null)
+                .count();
+
+        long totalQuantity = products.stream()
+                .mapToLong(Product::getQuantity)
+                .sum();
+
+        BigDecimal averageQuantityPerProduct = totalProducts > 0
+                ? BigDecimal.valueOf(totalQuantity)
+                .divide(BigDecimal.valueOf(totalProducts), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        long totalInitialQuantity = products.stream()
+                .mapToLong(Product::getInitialQuantity)
+                .sum();
+
+        Optional<Product> mostExpensiveProduct = products.stream()
+                .max(Comparator.comparing(Product::getPrice));
+
+        Optional<Product> leastExpensiveProduct = products.stream()
+                .min(Comparator.comparing(Product::getPrice));
+
+        return Map.ofEntries(
+                Map.entry("totalProducts", totalProducts),
+                Map.entry("totalPriceValue", totalPriceValue),
+                Map.entry("totalAreaUsed", totalAreaUsed),
+                Map.entry("averagePrice", averagePrice),
+                Map.entry("averageAreaUsed", averageAreaUsed),
+                Map.entry("statusCounts", statusCounts),
+                Map.entry("inventoryCounts", inventoryCounts),
+                Map.entry("totalExpiredProducts", totalExpiredProducts),
+                Map.entry("totalProductsWithoutInventories", totalProductsWithoutInventories),
+                Map.entry("totalQuantity", totalQuantity),
+                Map.entry("averageQuantityPerProduct", averageQuantityPerProduct),
+                Map.entry("totalInitialQuantity", totalInitialQuantity),
+                Map.entry("mostExpensiveProduct", mostExpensiveProduct.map(Product::getName).orElse("None")),
+                Map.entry("leastExpensiveProduct", leastExpensiveProduct.map(Product::getName).orElse("None"))
         );
     }
 }

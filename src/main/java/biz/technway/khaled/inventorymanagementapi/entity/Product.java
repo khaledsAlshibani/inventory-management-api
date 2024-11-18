@@ -1,14 +1,12 @@
 package biz.technway.khaled.inventorymanagementapi.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
-@Table(name = "product", uniqueConstraints = {@UniqueConstraint(columnNames = "sku")})
+@Table(name = "product")
 public class Product {
 
     @Id
@@ -16,44 +14,49 @@ public class Product {
     private Long id;
 
     @NotBlank(message = "Name is required")
+    @Size(max = 100, message = "Name must be at most 100 characters")
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
+    @Size(max = 65535, message = "Description is too long")
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @NotBlank(message = "SKU is required")
-    @Column(name = "sku", nullable = false, unique = true, length = 50)
+    @Size(max = 50, message = "SKU must be at most 50 characters")
+    @Column(name = "sku", nullable = false, length = 50)
     private String sku;
 
     @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.0", inclusive = false)
+    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
     @Column(name = "price", precision = 10, scale = 2, nullable = false)
     private BigDecimal price;
 
-    @NotNull
+    @NotNull(message = "Quantity is required")
+    @Min(value = 0, message = "Quantity cannot be negative")
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    @NotNull
     @Column(name = "initial_quantity", nullable = false)
     private Integer initialQuantity;
 
-    @DecimalMin(value = "0.0", inclusive = false)
+    @DecimalMin(value = "0.0", message = "Area cannot be negative")
     @Column(name = "area", precision = 10, scale = 2)
     private BigDecimal area;
 
-    @NotNull
+    @NotNull(message = "Status is required")
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private Status status;
+    private Status status = Status.AVAILABLE;
+
+    @Transient
+    private Long inventoryId;
 
     @ManyToOne
-    @JoinColumn(name = "inventory_id")
+    @JoinColumn(name = "inventory_id", referencedColumnName = "id", nullable = true)
     private Inventory inventory;
 
-    @NotNull
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id", nullable = true)
     private Long userId;
 
     @Column(name = "expiration_date")
@@ -66,13 +69,12 @@ public class Product {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt = new Date();
+    private Date createdAt;
 
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
 
-    // Enum for Status
     public enum Status {
         AVAILABLE, UNAVAILABLE
     }
@@ -80,6 +82,9 @@ public class Product {
     @PrePersist
     protected void onCreate() {
         createdAt = new Date();
+        if (initialQuantity == null) {
+            initialQuantity = quantity;
+        }
     }
 
     @PreUpdate
@@ -95,67 +100,67 @@ public class Product {
         this.id = id;
     }
 
-    public @NotBlank(message = "Name is required") String getName() {
+    public @NotBlank(message = "Name is required") @Size(max = 100, message = "Name must be at most 100 characters") String getName() {
         return name;
     }
 
-    public void setName(@NotBlank(message = "Name is required") String name) {
+    public void setName(@NotBlank(message = "Name is required") @Size(max = 100, message = "Name must be at most 100 characters") String name) {
         this.name = name;
     }
 
-    public String getDescription() {
+    public @Size(max = 65535, message = "Description is too long") String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(@Size(max = 65535, message = "Description is too long") String description) {
         this.description = description;
     }
 
-    public @NotBlank(message = "SKU is required") String getSku() {
+    public @NotBlank(message = "SKU is required") @Size(max = 50, message = "SKU must be at most 50 characters") String getSku() {
         return sku;
     }
 
-    public void setSku(@NotBlank(message = "SKU is required") String sku) {
+    public void setSku(@NotBlank(message = "SKU is required") @Size(max = 50, message = "SKU must be at most 50 characters") String sku) {
         this.sku = sku;
     }
 
-    public @NotNull(message = "Price is required") @DecimalMin(value = "0.0", inclusive = false) BigDecimal getPrice() {
+    public @NotNull(message = "Price is required") @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0") BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(@NotNull(message = "Price is required") @DecimalMin(value = "0.0", inclusive = false) BigDecimal price) {
+    public void setPrice(@NotNull(message = "Price is required") @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0") BigDecimal price) {
         this.price = price;
     }
 
-    public @NotNull Integer getQuantity() {
+    public @NotNull(message = "Quantity is required") @Min(value = 0, message = "Quantity cannot be negative") Integer getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(@NotNull Integer quantity) {
+    public void setQuantity(@NotNull(message = "Quantity is required") @Min(value = 0, message = "Quantity cannot be negative") Integer quantity) {
         this.quantity = quantity;
     }
 
-    public @NotNull Integer getInitialQuantity() {
+    public Integer getInitialQuantity() {
         return initialQuantity;
     }
 
-    public void setInitialQuantity(@NotNull Integer initialQuantity) {
+    public void setInitialQuantity(Integer initialQuantity) {
         this.initialQuantity = initialQuantity;
     }
 
-    public @DecimalMin(value = "0.0", inclusive = false) BigDecimal getArea() {
+    public @DecimalMin(value = "0.0", message = "Area cannot be negative") BigDecimal getArea() {
         return area;
     }
 
-    public void setArea(@DecimalMin(value = "0.0", inclusive = false) BigDecimal area) {
+    public void setArea(@DecimalMin(value = "0.0", message = "Area cannot be negative") BigDecimal area) {
         this.area = area;
     }
 
-    public @NotNull Status getStatus() {
+    public @NotNull(message = "Status is required") Status getStatus() {
         return status;
     }
 
-    public void setStatus(@NotNull Status status) {
+    public void setStatus(@NotNull(message = "Status is required") Status status) {
         this.status = status;
     }
 
@@ -167,11 +172,19 @@ public class Product {
         this.inventory = inventory;
     }
 
-    public @NotNull Long getUserId() {
+    public Long getInventoryId() {
+        return inventoryId != null ? inventoryId : (inventory != null ? inventory.getId() : null);
+    }
+
+    public void setInventoryId(Long inventoryId) {
+        this.inventoryId = inventoryId;
+    }
+
+    public Long getUserId() {
         return userId;
     }
 
-    public void setUserId(@NotNull Long userId) {
+    public void setUserId(Long userId) {
         this.userId = userId;
     }
 

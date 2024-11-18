@@ -26,5 +26,5 @@ security:
 logging:
   level:
     root: INFO
-#    org.springframework.web: DEBUG
-#    biz.technway.khaled.inventorymanagementapi: TRACE
+    org.springframework.web: DEBUG
+    biz.technway.khaled.inventorymanagementapi: TRACE
