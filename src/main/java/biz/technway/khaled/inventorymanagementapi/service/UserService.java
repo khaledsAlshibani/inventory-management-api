@@ -89,7 +89,6 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to detect file type.");
         }
 
-        // Allow only specific image types
         if (!mimeType.matches("image/(jpeg|png|jpg|webp)")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file type. Only JPG, PNG, and WEBP are allowed.");
         }
@@ -97,14 +96,11 @@ public class UserService {
 
     public String savePhoto(MultipartFile photo) {
         try {
-            // Generate a unique file name
             String extension = FilenameUtils.getExtension(photo.getOriginalFilename());
             String uniqueFileName = System.currentTimeMillis() + "-" + UUID.randomUUID() + "." + extension;
 
-            // Define the target path
             Path targetPath = Paths.get("src/main/resources/static/images/user-photos/" + uniqueFileName);
 
-            // Save the file
             Files.copy(photo.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
             return "http://localhost:8082/images/user-photos/" + uniqueFileName;
