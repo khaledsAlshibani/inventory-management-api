@@ -2,9 +2,7 @@ package biz.technway.khaled.inventorymanagementapi.service;
 
 import biz.technway.khaled.inventorymanagementapi.dto.InventoryResponseDTO;
 import biz.technway.khaled.inventorymanagementapi.entity.Inventory;
-import biz.technway.khaled.inventorymanagementapi.entity.Product;
 import biz.technway.khaled.inventorymanagementapi.repository.InventoryRepository;
-import biz.technway.khaled.inventorymanagementapi.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,12 +17,10 @@ import java.util.stream.Collectors;
 public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
-    private final ProductRepository productRepository;
 
     @Autowired
-    public InventoryService(InventoryRepository inventoryRepository, ProductRepository productRepository) {
+    public InventoryService(InventoryRepository inventoryRepository) {
         this.inventoryRepository = inventoryRepository;
-        this.productRepository = productRepository;
     }
 
     public Inventory createInventory(Inventory inventory) {
@@ -86,83 +82,88 @@ public class InventoryService {
     }
 
     public Map<String, Object> getStatistics() {
-        List<Product> products = productRepository.findAll();
+        List<Inventory> inventories = inventoryRepository.findAll();
 
-        long totalProducts = products.size();
-        BigDecimal totalPriceValue = products.stream()
-                .map(product -> product.getPrice().multiply(BigDecimal.valueOf(product.getQuantity())))
+        long totalInventories = inventories.size();
+        BigDecimal totalArea = inventories.stream()
+                .map(Inventory::getArea)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalAreaUsed = products.stream()
-                .map(Product::getArea)
+        BigDecimal totalAvailableArea = inventories.stream()
+                .map(Inventory::getAvailableArea)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Map<String, Long> statusCounts = products.stream()
+        Map<String, Long> statusCounts = inventories.stream()
                 .collect(Collectors.groupingBy(
-                        product -> product.getStatus().name(),
+                        inventory -> inventory.getStatus().name(),
                         Collectors.counting()
                 ));
 
-        Map<String, Long> inventoryCounts = products.stream()
-                .filter(product -> product.getInventory() != null)
+        Map<String, Long> typeCounts = inventories.stream()
                 .collect(Collectors.groupingBy(
-                        product -> product.getInventory().getName(),
+                        inventory -> inventory.getInventoryType().name(),
                         Collectors.counting()
                 ));
 
-        BigDecimal averagePrice = totalProducts > 0
-                ? products.stream()
-                .map(Product::getPrice)
+        BigDecimal averageUtilization = totalInventories > 0
+                ? inventories.stream()
+                .map(inventory -> {
+                    BigDecimal utilization = inventory.getAvailableArea()
+                            .divide(inventory.getArea(), 2, RoundingMode.HALF_UP);
+                    return BigDecimal.ONE.subtract(utilization);
+                })
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .divide(BigDecimal.valueOf(totalProducts), 2, RoundingMode.HALF_UP)
+                .divide(new BigDecimal(totalInventories), 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
-        BigDecimal averageAreaUsed = totalProducts > 0
-                ? totalAreaUsed.divide(BigDecimal.valueOf(totalProducts), 2, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
-
-        long totalExpiredProducts = products.stream()
-                .filter(product -> product.getExpirationDate() != null &&
-                        product.getExpirationDate().before(new Date()))
+        long inventoriesWithExpiredProducts = inventories.stream()
+                .filter(inventory -> inventory.getProducts() != null &&
+                        inventory.getProducts().stream()
+                                .anyMatch(product -> product.getExpirationDate() != null &&
+                                        product.getExpirationDate().before(new Date())))
                 .count();
 
-        long totalProductsWithoutInventories = products.stream()
-                .filter(product -> product.getInventory() == null)
-                .count();
-
-        long totalQuantity = products.stream()
-                .mapToLong(Product::getQuantity)
-                .sum();
-
-        BigDecimal averageQuantityPerProduct = totalProducts > 0
-                ? BigDecimal.valueOf(totalQuantity)
-                .divide(BigDecimal.valueOf(totalProducts), 2, RoundingMode.HALF_UP)
+        BigDecimal averageProductsPerInventory = totalInventories > 0
+                ? BigDecimal.valueOf(inventories.stream()
+                        .mapToLong(inventory -> inventory.getProducts() != null
+                                ? inventory.getProducts().size()
+                                : 0)
+                        .sum())
+                .divide(BigDecimal.valueOf(totalInventories), 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
-        long totalInitialQuantity = products.stream()
-                .mapToLong(Product::getInitialQuantity)
-                .sum();
+        long inventoriesWithLowStock = inventories.stream()
+                .filter(inventory -> inventory.getProducts() != null &&
+                        inventory.getProducts().stream()
+                                .anyMatch(product -> product.getQuantity() < 10)) // Threshold for low stock
+                .count();
 
-        Optional<Product> mostExpensiveProduct = products.stream()
-                .max(Comparator.comparing(Product::getPrice));
+        long emptyInventories = inventories.stream()
+                .filter(inventory -> inventory.getProducts() == null || inventory.getProducts().isEmpty())
+                .count();
 
-        Optional<Product> leastExpensiveProduct = products.stream()
-                .min(Comparator.comparing(Product::getPrice));
+        long fullyStockedInventories = inventories.stream()
+                .filter(inventory -> inventory.getAvailableArea().compareTo(BigDecimal.ZERO) == 0)
+                .count();
 
-        return Map.ofEntries(
-                Map.entry("totalProducts", totalProducts),
-                Map.entry("totalPriceValue", totalPriceValue),
-                Map.entry("totalAreaUsed", totalAreaUsed),
-                Map.entry("averagePrice", averagePrice),
-                Map.entry("averageAreaUsed", averageAreaUsed),
-                Map.entry("statusCounts", statusCounts),
-                Map.entry("inventoryCounts", inventoryCounts),
-                Map.entry("totalExpiredProducts", totalExpiredProducts),
-                Map.entry("totalProductsWithoutInventories", totalProductsWithoutInventories),
-                Map.entry("totalQuantity", totalQuantity),
-                Map.entry("averageQuantityPerProduct", averageQuantityPerProduct),
-                Map.entry("totalInitialQuantity", totalInitialQuantity),
-                Map.entry("mostExpensiveProduct", mostExpensiveProduct.map(Product::getName).orElse("None")),
-                Map.entry("leastExpensiveProduct", leastExpensiveProduct.map(Product::getName).orElse("None"))
-        );
+        long inventoriesWithoutLocations = inventories.stream()
+                .filter(inventory -> inventory.getAddress() == null || inventory.getAddress().trim().isEmpty())
+                .count();
+
+        // Using LinkedHashMap to preserve insertion order
+        Map<String, Object> statistics = new LinkedHashMap<>();
+        statistics.put("totalInventories", totalInventories);
+        statistics.put("totalArea", totalArea);
+        statistics.put("totalAvailableArea", totalAvailableArea);
+        statistics.put("statusCounts", statusCounts);
+        statistics.put("typeCounts", typeCounts);
+        statistics.put("averageUtilization", averageUtilization);
+        statistics.put("inventoriesWithExpiredProducts", inventoriesWithExpiredProducts);
+        statistics.put("averageProductsPerInventory", averageProductsPerInventory);
+        statistics.put("inventoriesWithLowStock", inventoriesWithLowStock);
+        statistics.put("emptyInventories", emptyInventories);
+        statistics.put("fullyStockedInventories", fullyStockedInventories);
+        statistics.put("inventoriesWithoutLocations", inventoriesWithoutLocations);
+
+        return statistics;
     }
 }

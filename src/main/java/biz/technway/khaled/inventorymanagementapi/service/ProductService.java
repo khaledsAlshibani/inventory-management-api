@@ -12,8 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -145,14 +144,51 @@ public class ProductService {
                 ? totalAreaUsed.divide(BigDecimal.valueOf(totalProducts), 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
-        return Map.of(
-                "totalProducts", totalProducts,
-                "totalPriceValue", totalPriceValue,
-                "totalAreaUsed", totalAreaUsed,
-                "averagePrice", averagePrice,
-                "averageAreaUsed", averageAreaUsed,
-                "statusCounts", statusCounts,
-                "inventoryCounts", inventoryCounts
-        );
+        long totalExpiredProducts = products.stream()
+                .filter(product -> product.getExpirationDate() != null &&
+                        product.getExpirationDate().before(new Date()))
+                .count();
+
+        long totalProductsWithoutInventories = products.stream()
+                .filter(product -> product.getInventory() == null)
+                .count();
+
+        long totalQuantity = products.stream()
+                .mapToLong(Product::getQuantity)
+                .sum();
+
+        BigDecimal averageQuantityPerProduct = totalProducts > 0
+                ? BigDecimal.valueOf(totalQuantity)
+                .divide(BigDecimal.valueOf(totalProducts), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        long totalInitialQuantity = products.stream()
+                .mapToLong(Product::getInitialQuantity)
+                .sum();
+
+        Optional<Product> mostExpensiveProduct = products.stream()
+                .max(Comparator.comparing(Product::getPrice));
+
+        Optional<Product> leastExpensiveProduct = products.stream()
+                .min(Comparator.comparing(Product::getPrice));
+
+        // Create a HashMap to store all the key-value pairs
+        Map<String, Object> statistics = new HashMap<>();
+        statistics.put("totalProducts", totalProducts);
+        statistics.put("totalPriceValue", totalPriceValue);
+        statistics.put("totalAreaUsed", totalAreaUsed);
+        statistics.put("averagePrice", averagePrice);
+        statistics.put("averageAreaUsed", averageAreaUsed);
+        statistics.put("totalExpiredProducts", totalExpiredProducts);
+        statistics.put("totalProductsWithoutInventories", totalProductsWithoutInventories);
+        statistics.put("totalQuantity", totalQuantity);
+        statistics.put("averageQuantityPerProduct", averageQuantityPerProduct);
+        statistics.put("totalInitialQuantity", totalInitialQuantity);
+        statistics.put("statusCounts", statusCounts);
+        statistics.put("inventoryCounts", inventoryCounts);
+        statistics.put("mostExpensiveProduct", mostExpensiveProduct.map(Product::getName).orElse("None"));
+        statistics.put("leastExpensiveProduct", leastExpensiveProduct.map(Product::getName).orElse("None"));
+
+        return statistics;
     }
 }
