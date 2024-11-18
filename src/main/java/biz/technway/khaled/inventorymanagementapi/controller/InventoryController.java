@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -141,6 +142,19 @@ public class InventoryController {
         } catch (Exception e) {
             logger.error("Error deleting inventory with ID {}: {}", id, e.getMessage());
             return new ResponseEntity<>("Failed to delete inventory", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/statistics")
+    public ResponseEntity<Map<String, Object>> getStatistics() {
+        logger.info("Accessing GET /api/v1/inventories/statistics - Retrieving inventory statistics");
+        try {
+            Map<String, Object> statistics = inventoryService.getStatistics();
+            logger.info("Successfully retrieved inventory statistics");
+            return new ResponseEntity<>(statistics, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error retrieving inventory statistics: {}", e.getMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

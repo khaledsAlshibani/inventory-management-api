@@ -8,7 +8,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -78,5 +81,47 @@ public class InventoryService {
         dto.setCreatedAt(inventory.getCreatedAt());
         dto.setUpdatedAt(inventory.getUpdatedAt());
         return dto;
+    }
+
+    public Map<String, Object> getStatistics() {
+        List<Inventory> inventories = inventoryRepository.findAll();
+
+        long totalInventories = inventories.size();
+        BigDecimal totalArea = inventories.stream()
+                .map(Inventory::getArea)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalAvailableArea = inventories.stream()
+                .map(Inventory::getAvailableArea)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Map<String, Long> statusCounts = inventories.stream()
+                .collect(Collectors.groupingBy(
+                        inventory -> inventory.getStatus().name(),
+                        Collectors.counting()
+                ));
+
+        Map<String, Long> typeCounts = inventories.stream()
+                .collect(Collectors.groupingBy(
+                        inventory -> inventory.getInventoryType().name(),
+                        Collectors.counting()
+                ));
+
+        BigDecimal averageUtilization = inventories.stream()
+                .map(inventory -> {
+                    BigDecimal utilization = inventory.getAvailableArea()
+                            .divide(inventory.getArea(), 2, RoundingMode.HALF_UP);
+                    return BigDecimal.ONE.subtract(utilization);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(new BigDecimal(totalInventories), 2, RoundingMode.HALF_UP);
+
+        return Map.of(
+                "totalInventories", totalInventories,
+                "totalArea", totalArea,
+                "totalAvailableArea", totalAvailableArea,
+                "statusCounts", statusCounts,
+                "typeCounts", typeCounts,
+                "averageUtilization", averageUtilization
+        );
     }
 }
