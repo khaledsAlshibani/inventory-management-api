@@ -18,13 +18,10 @@ public class InventoryResponseDTO {
     private Date createdAt;
     private Date updatedAt;
 
-    // Add a new field for error messages if needed
     private String message;
 
-    // Default constructor
     public InventoryResponseDTO() {}
 
-    // Constructor with a message parameter
     public InventoryResponseDTO(String message) {
         this.message = message;
     }

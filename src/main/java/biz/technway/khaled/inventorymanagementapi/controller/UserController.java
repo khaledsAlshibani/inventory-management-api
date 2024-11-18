@@ -60,6 +60,7 @@ public class UserController {
                 response.put("message", "Login successful");
                 response.put("token", token);
                 response.put("id", String.valueOf(userDTO.getId()));
+                response.put("username", userDTO.getUsername());
                 response.put("name", userDTO.getName());
                 response.put("email", userDTO.getEmail());
 
@@ -76,6 +77,38 @@ public class UserController {
         Map<String, String> response = new HashMap<>();
         response.put("message", "Invalid email or password");
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<UserResponseDTO> getUserProfile(@RequestHeader("Authorization") String authToken) {
+        String token = authToken.startsWith("Bearer ") ? authToken.substring(7) : authToken;
+        Long userId = jwtUtil.getUserIdFromToken(token);
+
+        Optional<UserResponseDTO> userDTO = userService.getUserById(userId);
+        return userDTO.map(dto -> new ResponseEntity<>(dto, HttpStatus.OK))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<UserResponseDTO> updateProfile(
+            @RequestHeader("Authorization") String authToken,
+            @RequestBody User userDetails) {
+        String token = authToken.startsWith("Bearer ") ? authToken.substring(7) : authToken;
+        Long userId = jwtUtil.getUserIdFromToken(token);
+
+        User updatedUser = userService.updateUser(userId, userDetails);
+        UserResponseDTO responseDTO = userService.convertToDTO(updatedUser);
+
+        return new ResponseEntity<>(responseDTO, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/profile")
+    public ResponseEntity<String> deleteUserProfile(@RequestHeader("Authorization") String authToken) {
+        String token = authToken.startsWith("Bearer ") ? authToken.substring(7) : authToken;
+        Long userId = jwtUtil.getUserIdFromToken(token);
+
+        userService.deleteUser(userId);
+        return new ResponseEntity<>("Account deleted successfully", HttpStatus.OK);
     }
 
     @GetMapping

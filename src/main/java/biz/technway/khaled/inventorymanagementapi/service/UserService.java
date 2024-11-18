@@ -84,6 +84,12 @@ public class UserService {
         return userRepository.save(existingUser);
     }
 
+    public void deleteUser(Long userId) {
+        User existingUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + userId));
+        userRepository.delete(existingUser);
+    }
+
     public void updatePassword(Long id, String newPassword) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + id));

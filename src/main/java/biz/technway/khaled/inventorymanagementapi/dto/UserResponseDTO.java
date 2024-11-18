@@ -12,6 +12,14 @@ public class UserResponseDTO {
     private Date createdAt;
     private Date updatedAt;
 
+    private String message;
+
+    public UserResponseDTO() {}
+
+    public UserResponseDTO(String message) {
+        this.message = message;
+    }
+
     public Long getId() {
         return id;
     }
