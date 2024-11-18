@@ -26,6 +26,7 @@ public class UserService {
     }
 
     public User createUser(User user) {
+        // Check if email or username is already in use
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already in use.");
         }
@@ -33,9 +34,39 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is already in use.");
         }
 
+        // Set a default photo path if not provided
+        if (user.getPhotoPath() == null || user.getPhotoPath().isEmpty()) {
+            user.setPhotoPath("http://localhost:8082/images/user-photos/default-user.png");
+        }
+
+        // Hash the password
         String hashedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashedPassword);
+
         return userRepository.save(user);
+    }
+
+    public User updateUserWithPhoto(Long userId, User userDetails) {
+        User existingUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + userId));
+
+        // Validate if the photo path is valid
+        if (userDetails.getPhotoPath() != null && !userDetails.getPhotoPath().isEmpty()) {
+            existingUser.setPhotoPath(userDetails.getPhotoPath());
+        }
+
+        // Update other user details
+        if (userDetails.getName() != null) {
+            existingUser.setName(userDetails.getName());
+        }
+        if (userDetails.getEmail() != null && !userDetails.getEmail().equals(existingUser.getEmail())) {
+            if (userRepository.findByEmail(userDetails.getEmail()).isPresent()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already in use.");
+            }
+            existingUser.setEmail(userDetails.getEmail());
+        }
+
+        return userRepository.save(existingUser);
     }
 
     public List<UserResponseDTO> getAllUserDTOs() {

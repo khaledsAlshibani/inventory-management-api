@@ -63,6 +63,7 @@ public class UserController {
                 response.put("username", userDTO.getUsername());
                 response.put("name", userDTO.getName());
                 response.put("email", userDTO.getEmail());
+                response.put("photoPath", userDTO.getPhotoPath());
 
                 return ResponseEntity.ok()
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -96,7 +97,7 @@ public class UserController {
         String token = authToken.startsWith("Bearer ") ? authToken.substring(7) : authToken;
         Long userId = jwtUtil.getUserIdFromToken(token);
 
-        User updatedUser = userService.updateUser(userId, userDetails);
+        User updatedUser = userService.updateUserWithPhoto(userId, userDetails);
         UserResponseDTO responseDTO = userService.convertToDTO(updatedUser);
 
         return new ResponseEntity<>(responseDTO, HttpStatus.OK);
