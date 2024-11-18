@@ -107,7 +107,7 @@ public class UserService {
             // Save the file
             Files.copy(photo.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-            return "/images/user-photos/" + uniqueFileName;
+            return "http://localhost:8082/images/user-photos/" + uniqueFileName;
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save photo.");
         }
