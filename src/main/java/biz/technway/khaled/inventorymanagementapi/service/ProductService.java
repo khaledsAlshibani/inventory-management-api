@@ -108,6 +108,13 @@ public class ProductService {
         return dto;
     }
 
+    public List<ProductResponseDTO> getProductsByUserId(Long userId) {
+        List<Product> products = productRepository.findByUserId(userId);
+        return products.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     public Map<String, Object> getStatistics() {
         List<Product> products = productRepository.findAll();
 

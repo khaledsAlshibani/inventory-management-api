@@ -2,9 +2,11 @@ package biz.technway.khaled.inventorymanagementapi.controller;
 
 import biz.technway.khaled.inventorymanagementapi.dto.InventoryResponseDTO;
 import biz.technway.khaled.inventorymanagementapi.dto.LoginRequestDTO;
+import biz.technway.khaled.inventorymanagementapi.dto.ProductResponseDTO;
 import biz.technway.khaled.inventorymanagementapi.dto.UserResponseDTO;
 import biz.technway.khaled.inventorymanagementapi.entity.User;
 import biz.technway.khaled.inventorymanagementapi.service.InventoryService;
+import biz.technway.khaled.inventorymanagementapi.service.ProductService;
 import biz.technway.khaled.inventorymanagementapi.service.UserService;
 import biz.technway.khaled.inventorymanagementapi.util.JwtUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,12 +37,14 @@ public class UserController {
     private final JwtUtil jwtUtil;
     private final InventoryService inventoryService;
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    private final ProductService productService;
 
     @Autowired
-    public UserController(UserService userService, InventoryService inventoryService, JwtUtil jwtUtil) {
+    public UserController(UserService userService, InventoryService inventoryService, JwtUtil jwtUtil, ProductService productService) {
         this.userService = userService;
         this.inventoryService = inventoryService;
         this.jwtUtil = jwtUtil;
+        this.productService = productService;
     }
 
     @PostMapping
@@ -185,6 +189,33 @@ public class UserController {
             return new ResponseEntity<>(inventories, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error retrieving inventories: {}", e.getMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/products")
+    public ResponseEntity<List<ProductResponseDTO>> getUserProducts(@RequestHeader("Authorization") String authToken) {
+        logger.info("Accessing GET /api/v1/users/products - Retrieving products for the logged-in user");
+        try {
+            // Extract the token and user ID
+            String token = authToken.startsWith("Bearer ") ? authToken.substring(7) : authToken;
+            Long userId = jwtUtil.getUserIdFromToken(token);
+
+            if (userId == null) {
+                throw new IllegalArgumentException("Invalid token: User ID not found");
+            }
+
+            // Fetch products for the user
+            List<ProductResponseDTO> products = productService.getProductsByUserId(userId);
+            if (products.isEmpty()) {
+                logger.warn("No products found for user ID: {}", userId);
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            logger.info("Retrieved {} products for user ID: {}", products.size(), userId);
+            return new ResponseEntity<>(products, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error retrieving products: {}", e.getMessage());
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
