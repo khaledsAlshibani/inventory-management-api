@@ -93,7 +93,6 @@ The project follows an **N-Tier Architecture**, ensuring separation of concerns 
 1. **Controller Layer**: Handles API requests and responses. This layer interacts directly with the client.
 2. **Service Layer**: Contains business logic and ensures proper data processing between the controller and repository layers.
 3. **Repository Layer**: Handles database operations, such as querying and persisting data.
-4. **Utility Layer**: Provides reusable utility functions, such as JWT token generation.
 
 ### Project Structure:
 
@@ -168,7 +167,7 @@ Content-Type: application/json
     }
 ```
 
-![Postman Success Response](postman-success-get-inventories.png)
+![Postman Success Response](assets/postman-success-get-inventories.png)
 
 ---
 
@@ -180,7 +179,7 @@ Content-Type: application/json
 }
 ```
 
-![Postman Unauthorized Response](unauthorized-request.png)
+![Postman Unauthorized Response](assets/unauthorized-request.png)
 
 --- 
 
@@ -192,7 +191,7 @@ These responses demonstrate the behavior of the API when the request is successf
 
 1. **Import the Database**  
    The database structure and initial data can be found in the following file:  
-   [inventory_management.sql](assets/db/inventory_management.sql).  
+   [inventory_management.sql](assets/db).  
    - Use your preferred database tool (e.g., MySQL Workbench, phpMyAdmin, or command line) to import the SQL file into your MySQL server.
 
    **Default User Credentials**:  
