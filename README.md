@@ -1,4 +1,4 @@
-# Inventory Management API Documentation (Summarized)
+<h1>Inventory Management API Documentation (Summarized)
 
 This document provides an introduction, explains the technologies used, API architecture, and includes an example endpoint explanation for learning purposes.
 
@@ -7,6 +7,31 @@ This document provides an introduction, explains the technologies used, API arch
 ## Introduction
 
 The **Inventory Management API** is a basic implementation showcasing the key aspects of building a RESTful API. It provides features for managing users, inventories, and products. The purpose of this API is to demonstrate backend concepts like layered architecture, authentication, and CRUD operations.
+
+---
+
+- [Introduction](#introduction)
+- [Technologies Used](#technologies-used)
+- [API Architecture](#api-architecture)
+  - [HTTP Methods:](#http-methods)
+  - [Path:](#path)
+  - [Headers:](#headers)
+  - [Authentication \& Authorization:](#authentication--authorization)
+  - [Authorization Example in Postman:](#authorization-example-in-postman)
+  - [Login Example in Postman:](#login-example-in-postman)
+- [Endpoints](#endpoints)
+  - [Key Endpoints:](#key-endpoints)
+- [Directory Structure](#directory-structure)
+  - [Layers:](#layers)
+  - [Project Structure:](#project-structure)
+  - [Resources:](#resources)
+- [Example Endpoint: `GET /api/v1/inventories`](#example-endpoint-get-apiv1inventories)
+  - [Purpose](#purpose)
+  - [Request](#request)
+  - [Response](#response)
+    - [**Success Response** (200 OK):](#success-response-200-ok)
+    - [**Error Response** (401 Unauthorized):](#error-response-401-unauthorized)
+- [Usage](#usage)
 
 ---
 
