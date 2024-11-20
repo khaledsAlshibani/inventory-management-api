@@ -1,4 +1,4 @@
-<h1>Inventory Management API Documentation (Summarized)
+<h1>Inventory Management API Documentation (Summarized)<h1>
 
 This document provides an introduction, explains the technologies used, API architecture, and includes an example endpoint explanation for learning purposes.
 
