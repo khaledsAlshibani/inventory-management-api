@@ -190,6 +190,7 @@ Content-Type: application/json
         "createdAt": "2024-11-18T19:47:31.000+00:00",
         "updatedAt": "2024-11-18T19:47:31.000+00:00",
     }
+]
 ```
 
 ![Postman Success Response](assets/postman-success-get-inventories.png)
@@ -200,7 +201,7 @@ Content-Type: application/json
 ```json
 {
   "status": "error",
-  "message": "Unauthorized access. Token is missing or invalid."
+  "error": "Invalid or expired token. Please log in again."
 }
 ```
 
